@@ -26,31 +26,35 @@ def Record_Stop(record_data,audio):
     audio.terminate()
 
 def Detect_Peak(y):
-    return scipy.signal.find_peaks(y,prominence=0.1)
+    return scipy.signal.find_peaks(y,prominence=0.01,height=(0,440))
 
 def Display_Data(x,y):
-    peaks,_ = Detect_Peak(y)
+    (peaks,index) = Detect_Peak(y)
+    print(index)
     plt.plot(x,y)
     plt.scatter(x[peaks],y[peaks],color = 'red')
     plt.xlabel("frequency [Hz]")
     plt.ylabel("amplitude spectrum[V]")
-    plt.xlim(1,4096)
+    plt.xlim(1,1024)
     plt.grid()
     plt.draw()
-    plt.pause(0.1)
+    plt.pause(0.001)
     plt.cla()
 
 def Fourier_Transform(record_data):
     data = record_data.read(1024)
-    # 一次元データに変換する
     audio_data = np.frombuffer(data,dtype='int16')
     # 取得したデータをフーリエ変換をする(複素配列)
     F = np.fft.fft(audio_data)
     # 振幅を求める
     F = F / (SAMP_RATE / 2)
+    window = scipy.signal.hann(SAMP_RATE)
+    F = F * (SAMP_RATE / np.sum(window))
     amp = np.abs(F)
-    # 周波数をもとめる
+    # 周波数を求める
     freq = np.fft.fftfreq(1024,d=(1/SAMP_RATE))
+    # パワースペクトルを求める
+    amp = pow(amp,2)
     Display_Data(freq[:1024//2],amp[:1024//2])
 
 if __name__ == "__main__":
